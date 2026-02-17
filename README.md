@@ -1,5 +1,10 @@
 # Customer Behavior Analysis & Interactive Dashboard
 
+## 🌍 Live Dashboard
+
+👉 https://samiya-hiya.github.io/customer-behavior-analysis-dashboard/
+
+
 ## 📌 Project Overview
 
 This project analyzes customer shopping behavior using transactional retail data to uncover insights into spending patterns, customer segments, product performance, and subscription behavior.
