@@ -151,17 +151,7 @@ The AI-generated code was used solely as a visualization layer for presenting th
 <img width="1425" height="779" alt="Screenshot 2026-02-17 at 15 28 36" src="https://github.com/user-attachments/assets/a4d616f2-e396-44a6-afa3-f6cffa7a100d" />
 
 ---
-## 🚀 Project Structure
-ustomer-behavior-analysis-dashboard/
-│
-├── data/
-├── notebooks/
-├── sql/
-├── dashboard/
-├── images/
-└── README.md
 
----
 ## 🎯 Purpose of This Project
 
 This project demonstrates:
