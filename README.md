@@ -4,6 +4,19 @@
 
 👉 https://samiya-hiya.github.io/customer-behavior-analysis-dashboard/
 
+### ⚠️ How to View the Visualizations
+
+After opening the live dashboard:
+
+1. Download the file **`converted-data.json`** from this repository.
+2. Click the **Upload JSON file** button in the dashboard.
+3. Select the downloaded `converted-data.json` file.
+4. The interactive visualizations will load instantly.
+
+The dashboard runs entirely in the browser.  
+No data is stored or transmitted to any server.
+
+
 
 ## 📌 Project Overview
 
