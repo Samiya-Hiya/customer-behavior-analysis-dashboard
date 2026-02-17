@@ -312,6 +312,24 @@
       <code>frequency_of_purchases</code>, <code>purchase_frequency_days</code>, <code>subscription_status</code>, <code>gender</code>, <code>location</code>.
     </div>
   </div>
+  
+// Auto-load default dataset on page load
+window.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const response = await fetch("converted-data.json");
+    const data = await response.json();
+
+    RAW = data.map(normalizeRecord);
+    populateFilters();
+    enableControls(true);
+    renderAll();
+
+    setPill("ok", "Default data loaded");
+    setStatus(`Loaded ${RAW.length} records automatically.`);
+  } catch (err) {
+    console.log("No default dataset found.");
+  }
+});
 
 <script>
 (() => {
