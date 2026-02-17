@@ -1,853 +1,187 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Interactive Customer Behavior Dashboard (JSON Upload)</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Customer Behavior Dashboard</title>
 
-  <!-- Latest Plotly.js CDN (official shortcut) -->
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
-  <style>
-    :root{
-      --bg0:#0b1220; --bg1:#070b14;
-      --card:rgba(255,255,255,.04);
-      --border:rgba(255,255,255,.10);
-      --text:#e6edf3; --muted:#9aa4b2;
-      --ok:#7ee787; --warn:#ffdf5d; --bad:#ff7b72;
-    }
-    * { box-sizing: border-box; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: linear-gradient(180deg, var(--bg0), var(--bg1));
-      color: var(--text);
-    }
-    header{
-      padding: 18px 18px 10px;
-      border-bottom: 1px solid var(--border);
-    }
-    h1{ margin:0 0 6px; font-size: 18px; }
-    .sub{ margin:0; color: var(--muted); font-size: 13px; line-height: 1.35; }
-
-    .toolbar{
-      display:flex; flex-wrap:wrap; gap:10px;
-      padding: 12px 18px;
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0;
-      background: rgba(11,18,32,.88);
-      backdrop-filter: blur(10px);
-      z-index: 10;
-    }
-    .control{
-      display:flex; flex-direction:column; gap:6px;
-      padding:10px 12px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      border-radius: 12px;
-      min-width: 190px;
-    }
-    label{ font-size: 12px; color: var(--muted); }
-    select, input[type="file"]{
-      width: 100%;
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 10px;
-      outline:none;
-      font-size: 13px;
-    }
-    button{
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 13px;
-    }
-    button:hover{ background: rgba(255,255,255,.11); }
-
-    .status{
-      display:flex; align-items:center; gap:10px;
-      padding:10px 12px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.03);
-      border-radius: 12px;
-      min-width: 260px;
-      flex: 1 1 260px;
-    }
-    .pill{
-      font-size: 12px; padding: 4px 8px; border-radius: 999px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.05);
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    .pill.ok{ color: var(--ok); border-color: rgba(126,231,135,.35); }
-    .pill.warn{ color: var(--warn); border-color: rgba(255,223,93,.35); }
-    .pill.bad{ color: var(--bad); border-color: rgba(255,123,114,.35); }
-
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 14px;
-      padding: 14px 18px 22px;
-    }
-    .card{
-      grid-column: span 6;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px;
-      overflow:hidden;
-      min-height: 420px;
-    }
-    .card.wide{ grid-column: span 12; min-height: 520px; }
-    .card.small{ grid-column: span 3; min-height: unset; }
-    .card.small .kpiLabel{ color: var(--muted); font-size: 12px; margin-top: 6px; }
-    .card.small .kpiValue{ font-size: 22px; font-weight: 750; margin-top: 6px; }
-    .card.small .kpiSub{ font-size: 12px; color: var(--muted); margin-top: 4px; }
-    .card h2{ margin: 4px 4px 10px; font-size: 14px; font-weight: 650; }
-    .hint{ margin: 0 4px 10px; color: var(--muted); font-size: 12px; }
-    .plot{ width:100%; height: 380px; }
-    .wide .plot{ height: 480px; }
-
-    .tableWrap{
-      width: 100%;
-      overflow:auto;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-    }
-    table{
-      width:100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      min-width: 640px;
-      background: rgba(255,255,255,.02);
-    }
-    th, td{
-      padding: 10px 10px;
-      border-bottom: 1px solid rgba(255,255,255,.06);
-      text-align: left;
-      vertical-align: top;
-    }
-    th{
-      position: sticky; top: 0;
-      background: rgba(11,18,32,.92);
-      color: var(--muted);
-      font-weight: 650;
-    }
-    tr:hover td{ background: rgba(255,255,255,.03); }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-
-    .footer{
-      padding: 0 18px 18px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.4;
-    }
-    code{ color: #c9d1d9; }
-
-    @media (max-width: 1100px){
-      .card.small{ grid-column: span 6; }
-    }
-    @media (max-width: 980px){
-      .card{ grid-column: span 12; }
-      .control{ min-width: 160px; }
-      .card.small{ grid-column: span 12; }
-      table{ min-width: 0; }
-    }
-  </style>
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#0b1220;
+  color:#e6edf3;
+}
+header {
+  padding:20px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+h1 { margin:0; }
+.container { padding:20px; }
+.plot { height:400px; margin-bottom:40px; }
+select, input { margin-right:10px; padding:6px; }
+</style>
 </head>
 
 <body>
-  <header>
-    <h1>Interactive Customer Behavior Dashboard</h1>
-    <p class="sub">
-      Upload your customer behavior JSON (array of records) from your computer and the dashboard will render instantly in-browser.
-      Your file never leaves your device.
-    </p>
-  </header>
 
-  <div class="toolbar">
-    <div class="control">
-      <label for="fileInput">Upload JSON file</label>
-      <input id="fileInput" type="file" accept=".json,application/json" />
-    </div>
+<header>
+  <h1>Customer Behavior Dashboard</h1>
+  <p>Auto-loaded dataset + optional JSON upload</p>
+</header>
 
-    <div class="control">
-      <label for="category">Category</label>
-      <select id="category" disabled>
-        <option value="__all__">All</option>
-      </select>
-    </div>
+<div class="container">
+  <input type="file" id="fileInput" accept=".json" />
+  <select id="category">
+    <option value="__all__">All Categories</option>
+  </select>
+</div>
 
-    <div class="control">
-      <label for="season">Season</label>
-      <select id="season" disabled>
-        <option value="__all__">All</option>
-      </select>
-    </div>
+<div id="plot_scatter" class="plot"></div>
+<div id="plot_heatmap" class="plot"></div>
+<div id="plot_segment" class="plot"></div>
+<div id="plot_subscription" class="plot"></div>
+<div id="plot_map" class="plot"></div>
 
-    <div class="control">
-      <label for="subscription">Subscription Status</label>
-      <select id="subscription" disabled>
-        <option value="__all__">All</option>
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
-      </select>
-    </div>
+<script>
 
-    <div class="control">
-      <label for="gender">Gender</label>
-      <select id="gender" disabled>
-        <option value="__all__">All</option>
-      </select>
-    </div>
+let RAW = [];
+let FILTERED = [];
 
-    <div class="control">
-      <label>Actions</label>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button id="resetBtn" type="button" disabled>Reset filters</button>
-        <button id="exportBtn" type="button" disabled>Export charts (PNG)</button>
-      </div>
-    </div>
+function toNum(v){
+  const n = Number(v);
+  return isNaN(n) ? null : n;
+}
 
-    <div class="status" id="statusBox">
-      <span class="pill warn" id="statusPill">No data loaded</span>
-      <div style="min-width:0">
-        <div style="font-size:13px; font-weight:600; margin-bottom:2px;">Dataset status</div>
-        <div style="font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="statusText">
-          Upload a JSON file to begin.
-        </div>
-      </div>
-    </div>
-  </div>
+function uniq(arr){
+  return [...new Set(arr.filter(Boolean))];
+}
 
-  <div class="grid">
-    <!-- KPI Row -->
-    <div class="card small">
-      <div class="kpiLabel">Total revenue</div>
-      <div class="kpiValue" id="kpiRevenue">—</div>
-      <div class="kpiSub" id="kpiRevenueSub">From filtered data</div>
-    </div>
-    <div class="card small">
-      <div class="kpiLabel">Avg rating</div>
-      <div class="kpiValue" id="kpiRating">—</div>
-      <div class="kpiSub" id="kpiRatingSub">From filtered data</div>
-    </div>
-    <div class="card small">
-      <div class="kpiLabel">Subscribers</div>
-      <div class="kpiValue" id="kpiSubscribers">—</div>
-      <div class="kpiSub" id="kpiSubscribersSub">Share of filtered records</div>
-    </div>
-    <div class="card small">
-      <div class="kpiLabel">Repeat customers</div>
-      <div class="kpiValue" id="kpiRepeat">—</div>
-      <div class="kpiSub" id="kpiRepeatSub">previous_purchases &gt; 1</div>
-    </div>
+function applyFilters(){
+  const cat = document.getElementById("category").value;
+  FILTERED = RAW.filter(r => {
+    if(cat !== "__all__" && r.category !== cat) return false;
+    return true;
+  });
+}
 
-    <!-- 5 key visualizations -->
-    <div class="card">
-      <h2>1) Purchase Amount vs Review Rating</h2>
-      <p class="hint">Scatter plot (colored by category). Helps spot overpriced / under-loved items.</p>
-      <div id="plot_scatter" class="plot"></div>
-    </div>
+function renderScatter(){
+  const categories = uniq(FILTERED.map(r=>r.category));
+  const traces = categories.map(cat=>{
+    const rows = FILTERED.filter(r=>r.category===cat);
+    return {
+      x: rows.map(r=>toNum(r.purchase_amount)),
+      y: rows.map(r=>toNum(r.review_rating)),
+      mode:'markers',
+      type:'scatter',
+      name:cat
+    }
+  });
+  Plotly.newPlot("plot_scatter", traces, {title:"Purchase vs Rating"});
+}
 
-    <div class="card">
-      <h2>2) Seasonal Demand Heatmap</h2>
-      <p class="hint">Heatmap of purchase counts by category × season.</p>
-      <div id="plot_heatmap" class="plot"></div>
-    </div>
+function renderHeatmap(){
+  const categories = uniq(FILTERED.map(r=>r.category));
+  const seasons = uniq(FILTERED.map(r=>r.season));
+  const z = categories.map(cat=>{
+    return seasons.map(sea=>{
+      return FILTERED.filter(r=>r.category===cat && r.season===sea).length;
+    });
+  });
+  Plotly.newPlot("plot_heatmap", [{
+    z:z,
+    x:seasons,
+    y:categories,
+    type:'heatmap'
+  }], {title:"Seasonal Demand"});
+}
 
-    <div class="card">
-      <h2>3) Segments: Age Group × Purchase Frequency</h2>
-      <p class="hint">Grouped bars: how often different age groups purchase.</p>
-      <div id="plot_segment" class="plot"></div>
-    </div>
+function renderSegment(){
+  const ages = uniq(FILTERED.map(r=>r.age_group));
+  const freqs = uniq(FILTERED.map(r=>r.frequency_of_purchases));
+  const traces = freqs.map(f=>{
+    return {
+      x:ages,
+      y:ages.map(a=>FILTERED.filter(r=>r.age_group===a && r.frequency_of_purchases===f).length),
+      type:'bar',
+      name:f
+    }
+  });
+  Plotly.newPlot("plot_segment", traces, {barmode:'group', title:"Age vs Frequency"});
+}
 
-    <div class="card">
-      <h2>5) Subscription vs Non-Subscription Behavior</h2>
-      <p class="hint">Box plots for purchase amount and purchase frequency (days) by subscription status.</p>
-      <div id="plot_subscription" class="plot"></div>
-    </div>
+function renderSubscription(){
+  const yes = FILTERED.filter(r=>r.subscription_status==="Yes");
+  const no = FILTERED.filter(r=>r.subscription_status==="No");
+  Plotly.newPlot("plot_subscription", [
+    {y:yes.map(r=>toNum(r.purchase_amount)), type:'box', name:'Yes'},
+    {y:no.map(r=>toNum(r.purchase_amount)), type:'box', name:'No'}
+  ], {title:"Subscribers vs Non-Subscribers"});
+}
 
-    <div class="card wide">
-      <h2>4) Geographic Revenue (US States)</h2>
-      <p class="hint">Choropleth: total purchase amount per state (expects US state names in <code>location</code>).</p>
-      <div id="plot_map" class="plot"></div>
-    </div>
+function renderMap(){
+  const states = uniq(FILTERED.map(r=>r.location));
+  const z = states.map(s=>{
+    return FILTERED.filter(r=>r.location===s)
+      .reduce((sum,r)=>sum+(toNum(r.purchase_amount)||0),0);
+  });
+  Plotly.newPlot("plot_map", [{
+    type:'choropleth',
+    locationmode:'USA-states',
+    locations:states,
+    z:z
+  }], {geo:{scope:'usa'}, title:"Revenue by State"});
+}
 
-    <!-- Top items table -->
-    <div class="card wide" style="min-height: 420px;">
-      <h2>Top items (by revenue)</h2>
-      <p class="hint">Top 15 items by total purchase amount, plus average rating and purchase count (filtered data).</p>
-      <div class="tableWrap">
-        <table id="topItemsTable" aria-label="Top items table">
-          <thead>
-            <tr>
-              <th style="width: 42px;">#</th>
-              <th>Item</th>
-              <th>Category</th>
-              <th>Revenue</th>
-              <th>Purchases</th>
-              <th>Avg rating</th>
-            </tr>
-          </thead>
-          <tbody id="topItemsBody">
-            <tr><td colspan="6" style="color: var(--muted);">Upload data to view.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+function renderAll(){
+  applyFilters();
+  renderScatter();
+  renderHeatmap();
+  renderSegment();
+  renderSubscription();
+  renderMap();
+}
 
-  </div>
+function populateFilters(){
+  const cats = uniq(RAW.map(r=>r.category));
+  const select = document.getElementById("category");
+  select.innerHTML='<option value="__all__">All Categories</option>';
+  cats.forEach(c=>{
+    const opt=document.createElement("option");
+    opt.value=c;
+    opt.textContent=c;
+    select.appendChild(opt);
+  });
+}
 
-  <div class="footer">
-    <div><b>Expected fields</b> (your file can have extra fields):</div>
-    <div>
-      <code>purchase_amount</code>, <code>review_rating</code>, <code>category</code>, <code>season</code>, <code>age_group</code>,
-      <code>frequency_of_purchases</code>, <code>purchase_frequency_days</code>, <code>subscription_status</code>, <code>gender</code>, <code>location</code>.
-    </div>
-  </div>
-  
-// Auto-load default dataset on page load
-window.addEventListener("DOMContentLoaded", async () => {
-  try {
-    const response = await fetch("converted-data.json");
-    const data = await response.json();
+document.getElementById("category").addEventListener("change", renderAll);
 
-    RAW = data.map(normalizeRecord);
+document.getElementById("fileInput").addEventListener("change", async (e)=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  const text=await file.text();
+  RAW=JSON.parse(text);
+  populateFilters();
+  renderAll();
+});
+
+// AUTO LOAD DEFAULT DATA
+window.addEventListener("load", async ()=>{
+  try{
+    const response=await fetch("converted-data.json");
+    RAW=await response.json();
     populateFilters();
-    enableControls(true);
     renderAll();
-
-    setPill("ok", "Default data loaded");
-    setStatus(`Loaded ${RAW.length} records automatically.`);
-  } catch (err) {
-    console.log("No default dataset found.");
+    console.log("Default dataset loaded");
+  }catch(err){
+    console.log("Auto-load failed",err);
   }
 });
 
-<script>
-(() => {
-  // ---------------- Utilities ----------------
-  const uniq = (arr) => Array.from(new Set(arr))
-    .filter(v => v !== undefined && v !== null && String(v).trim() !== "");
-
-  const toNum = (v) => {
-    if (v === null || v === undefined) return null;
-    if (typeof v === "number") return Number.isFinite(v) ? v : null;
-    const x = Number(String(v).replace(/,/g,'').trim());
-    return Number.isFinite(x) ? x : null;
-  };
-
-  const fmtNumber = (n, digits=0) => {
-    if (n === null || n === undefined || !Number.isFinite(n)) return "—";
-    return n.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
-  };
-
-  const fmtCurrency = (n) => {
-    if (n === null || n === undefined || !Number.isFinite(n)) return "—";
-    return n.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-  };
-
-  function setPill(kind, text) {
-    const pill = document.getElementById("statusPill");
-    pill.className = "pill " + kind;
-    pill.textContent = text;
-  }
-
-  function setStatus(text) {
-    document.getElementById("statusText").textContent = text;
-  }
-
-  function plotlyLayoutBase(title) {
-    return {
-      title: { text: title, font: { size: 14 } },
-      margin: { l: 52, r: 18, t: 52, b: 46 },
-      paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: "rgba(0,0,0,0)",
-      font: { color: "#e6edf3" },
-      xaxis: { gridcolor: "rgba(255,255,255,.08)", zerolinecolor: "rgba(255,255,255,.10)" },
-      yaxis: { gridcolor: "rgba(255,255,255,.08)", zerolinecolor: "rgba(255,255,255,.10)" },
-      legend: { bgcolor: "rgba(0,0,0,0)" }
-    };
-  }
-
-  // Map full state names to abbreviations for Plotly USA-states choropleth
-  const STATE_ABBR = {
-    "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT",
-    "Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN",
-    "Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA",
-    "Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV",
-    "New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND",
-    "Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD",
-    "Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV",
-    "Wisconsin":"WI","Wyoming":"WY"
-  };
-
-  // ---------------- State ----------------
-  let RAW = [];
-  let FILTERED = [];
-
-  // ---------------- Elements ----------------
-  const els = {
-    fileInput: document.getElementById("fileInput"),
-    category: document.getElementById("category"),
-    season: document.getElementById("season"),
-    subscription: document.getElementById("subscription"),
-    gender: document.getElementById("gender"),
-    resetBtn: document.getElementById("resetBtn"),
-    exportBtn: document.getElementById("exportBtn"),
-
-    kpiRevenue: document.getElementById("kpiRevenue"),
-    kpiRating: document.getElementById("kpiRating"),
-    kpiSubscribers: document.getElementById("kpiSubscribers"),
-    kpiRepeat: document.getElementById("kpiRepeat"),
-
-    topItemsBody: document.getElementById("topItemsBody"),
-  };
-
-  function enableControls(enabled) {
-    for (const k of ["category","season","subscription","gender"]) els[k].disabled = !enabled;
-    els.resetBtn.disabled = !enabled;
-    els.exportBtn.disabled = !enabled;
-  }
-
-  function setOptions(selectEl, options, includeAll=true) {
-    const current = selectEl.value;
-    const base = includeAll ? ["__all__"] : [];
-    const all = base.concat(options);
-    selectEl.innerHTML = "";
-    for (const opt of all) {
-      const o = document.createElement("option");
-      o.value = opt;
-      o.textContent = opt === "__all__" ? "All" : opt;
-      selectEl.appendChild(o);
-    }
-    if (all.includes(current)) selectEl.value = current;
-    else selectEl.value = "__all__";
-  }
-
-  function applyFilters() {
-    const cat = els.category.value;
-    const sea = els.season.value;
-    const sub = els.subscription.value;
-    const gen = els.gender.value;
-
-    FILTERED = RAW.filter(r => {
-      if (cat !== "__all__" && r.category !== cat) return false;
-      if (sea !== "__all__" && r.season !== sea) return false;
-      if (sub !== "__all__" && r.subscription_status !== sub) return false;
-      if (gen !== "__all__" && r.gender !== gen) return false;
-      return true;
-    });
-  }
-
-  // ---------------- KPI + Table ----------------
-  function renderKPIs(rows) {
-    if (!rows.length) {
-      els.kpiRevenue.textContent = "—";
-      els.kpiRating.textContent = "—";
-      els.kpiSubscribers.textContent = "—";
-      els.kpiRepeat.textContent = "—";
-      return;
-    }
-
-    let revenue = 0;
-    let ratingSum = 0;
-    let ratingN = 0;
-    let subsN = 0;
-    let repeatN = 0;
-
-    for (const r of rows) {
-      const amt = toNum(r.purchase_amount);
-      if (amt != null) revenue += amt;
-
-      const rr = toNum(r.review_rating);
-      if (rr != null) { ratingSum += rr; ratingN += 1; }
-
-      const sub = String(r.subscription_status ?? "").toLowerCase();
-      if (sub === "yes") subsN += 1;
-
-      const prev = toNum(r.previous_purchases);
-      if (prev != null && prev > 1) repeatN += 1;
-    }
-
-    const avgRating = ratingN ? (ratingSum / ratingN) : null;
-    const subPct = rows.length ? (subsN / rows.length) * 100 : null;
-    const repPct = rows.length ? (repeatN / rows.length) * 100 : null;
-
-    els.kpiRevenue.textContent = fmtCurrency(revenue);
-    els.kpiRating.textContent = avgRating == null ? "—" : fmtNumber(avgRating, 2);
-    els.kpiSubscribers.textContent = subPct == null ? "—" : `${fmtNumber(subPct, 1)}%`;
-    els.kpiRepeat.textContent = repPct == null ? "—" : `${fmtNumber(repPct, 1)}%`;
-  }
-
-  function renderTopItemsTable(rows) {
-    if (!rows.length) {
-      els.topItemsBody.innerHTML = `<tr><td colspan="6" style="color: var(--muted);">No data for current filters.</td></tr>`;
-      return;
-    }
-
-    const byItem = new Map();
-    for (const r of rows) {
-      const item = r.item_purchased ?? "Unknown";
-      const cat = r.category ?? "—";
-      const amt = toNum(r.purchase_amount) ?? 0;
-      const rr = toNum(r.review_rating);
-
-      const key = `${item}|||${cat}`;
-      if (!byItem.has(key)) byItem.set(key, { item, cat, revenue: 0, n: 0, ratingSum: 0, ratingN: 0 });
-      const obj = byItem.get(key);
-      obj.revenue += amt;
-      obj.n += 1;
-      if (rr != null) { obj.ratingSum += rr; obj.ratingN += 1; }
-    }
-
-    const items = Array.from(byItem.values())
-      .map(d => ({ ...d, avgRating: d.ratingN ? d.ratingSum / d.ratingN : null }))
-      .sort((a,b) => b.revenue - a.revenue)
-      .slice(0, 15);
-
-    const rowsHtml = items.map((d, i) => `
-      <tr>
-        <td class="mono">${i+1}</td>
-        <td>${escapeHtml(d.item)}</td>
-        <td>${escapeHtml(d.cat)}</td>
-        <td>${fmtCurrency(d.revenue)}</td>
-        <td>${fmtNumber(d.n)}</td>
-        <td>${d.avgRating == null ? "—" : fmtNumber(d.avgRating, 2)}</td>
-      </tr>
-    `).join("");
-
-    els.topItemsBody.innerHTML = rowsHtml || `<tr><td colspan="6" style="color: var(--muted);">No items found.</td></tr>`;
-  }
-
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  // ---------------- Rendering helpers ----------------
-  function emptyPlot(divId, title) {
-    Plotly.newPlot(divId, [{ type: "scatter", x: [], y: [], mode: "markers" }],
-      plotlyLayoutBase(title), { responsive: true, displayModeBar: false });
-  }
-
-  function toMatrixCount(rows, rowKey, colKey) {
-    const rowVals = uniq(rows.map(rowKey)).sort();
-    const colVals = uniq(rows.map(colKey)).sort();
-    const counts = new Map();
-    for (const r of rows) {
-      const rk = rowKey(r);
-      const ck = colKey(r);
-      const k = `${rk}|||${ck}`;
-      counts.set(k, (counts.get(k) || 0) + 1);
-    }
-    const z = rowVals.map(rv => colVals.map(cv => counts.get(`${rv}|||${cv}`) || 0));
-    return { rowVals, colVals, z };
-  }
-
-  // ---------------- Charts (5 key) ----------------
-  function renderScatter(rows) {
-    const categories = uniq(rows.map(r => r.category)).sort();
-    const traces = categories.map(cat => {
-      const rs = rows.filter(r => r.category === cat);
-      const x = [];
-      const y = [];
-      const text = [];
-      for (const r of rs) {
-        const a = toNum(r.purchase_amount);
-        const rr = toNum(r.review_rating);
-        if (a == null || rr == null) continue;
-        x.push(a);
-        y.push(rr);
-        text.push(
-          `Item: ${r.item_purchased ?? "—"}<br>` +
-          `State: ${r.location ?? "—"}<br>` +
-          `Sub: ${r.subscription_status ?? "—"}<br>` +
-          `Freq: ${r.frequency_of_purchases ?? "—"}`
-        );
-      }
-      return { type:"scatter", mode:"markers", name:cat, x, y, text,
-        hovertemplate:"Amount: %{x}<br>Rating: %{y}<br>%{text}<extra></extra>" };
-    });
-
-    const layout = plotlyLayoutBase("Purchase Amount vs Review Rating");
-    layout.xaxis.title = "Purchase Amount";
-    layout.yaxis.title = "Review Rating";
-    Plotly.newPlot("plot_scatter", traces.length ? traces : [{type:"scatter",x:[],y:[]}],
-      layout, { responsive:true, displayModeBar:false });
-  }
-
-  function renderHeatmap(rows) {
-    const { rowVals, colVals, z } = toMatrixCount(rows, r => r.category, r => r.season);
-    const trace = { type:"heatmap", x:colVals, y:rowVals, z,
-      hovertemplate:"Category: %{y}<br>Season: %{x}<br>Purchases: %{z}<extra></extra>" };
-    const layout = plotlyLayoutBase("Seasonal Demand (Count)");
-    layout.xaxis.title = "Season";
-    layout.yaxis.title = "Category";
-    Plotly.newPlot("plot_heatmap", [trace], layout, { responsive:true, displayModeBar:false });
-  }
-
-  function renderSegment(rows) {
-    const ageGroups = uniq(rows.map(r => r.age_group)).sort();
-    const freqs = uniq(rows.map(r => r.frequency_of_purchases)).sort();
-
-    const traces = freqs.map(f => {
-      const counts = ageGroups.map(ag => rows.filter(r => r.age_group === ag && r.frequency_of_purchases === f).length);
-      return { type:"bar", name:f, x:ageGroups, y:counts,
-        hovertemplate:"Age group: %{x}<br>Frequency: " + f + "<br>Count: %{y}<extra></extra>" };
-    });
-
-    const layout = plotlyLayoutBase("Customer Segments");
-    layout.barmode = "group";
-    layout.xaxis.title = "Age Group";
-    layout.yaxis.title = "Purchase Count";
-    Plotly.newPlot("plot_segment", traces.length ? traces : [{type:"bar",x:[],y:[]}],
-      layout, { responsive:true, displayModeBar:false });
-  }
-
-  function renderSubscription(rows) {
-    const yes = rows.filter(r => String(r.subscription_status).toLowerCase() === "yes");
-    const no  = rows.filter(r => String(r.subscription_status).toLowerCase() === "no");
-
-    const yesAmount = yes.map(r => toNum(r.purchase_amount)).filter(v => v != null);
-    const noAmount  = no.map(r => toNum(r.purchase_amount)).filter(v => v != null);
-    const yesDays   = yes.map(r => toNum(r.purchase_frequency_days)).filter(v => v != null);
-    const noDays    = no.map(r => toNum(r.purchase_frequency_days)).filter(v => v != null);
-
-    const traces = [
-      { type:"box", name:"Yes (Amount)", y:yesAmount, boxpoints:false, hovertemplate:"%{y}<extra></extra>" },
-      { type:"box", name:"No (Amount)",  y:noAmount,  boxpoints:false, hovertemplate:"%{y}<extra></extra>" },
-      { type:"box", name:"Yes (Freq days)", y:yesDays, boxpoints:false, hovertemplate:"%{y}<extra></extra>" },
-      { type:"box", name:"No (Freq days)",  y:noDays,  boxpoints:false, hovertemplate:"%{y}<extra></extra>" }
-    ];
-
-    const layout = plotlyLayoutBase("Subscription vs Non-Subscription");
-    layout.yaxis.title = "Value (amount or days)";
-    Plotly.newPlot("plot_subscription", traces, layout, { responsive:true, displayModeBar:false });
-  }
-
-  function renderMap(rows) {
-    const sums = new Map();
-    for (const r of rows) {
-      const stateName = r.location;
-      const amt = toNum(r.purchase_amount);
-      if (!stateName || amt == null) continue;
-      sums.set(stateName, (sums.get(stateName) || 0) + amt);
-    }
-    const locations = [];
-    const z = [];
-    for (const [stateName, total] of sums.entries()) {
-      const abbr = STATE_ABBR[stateName];
-      if (!abbr) continue;
-      locations.push(abbr);
-      z.push(total);
-    }
-
-    const trace = { type:"choropleth", locationmode:"USA-states", locations, z,
-      hovertemplate:"State: %{location}<br>Total amount: %{z}<extra></extra>" };
-
-    const layout = plotlyLayoutBase("Geographic Revenue (US States)");
-    layout.geo = { scope:"usa", bgcolor:"rgba(0,0,0,0)", lakecolor:"rgba(255,255,255,.06)" };
-    delete layout.xaxis; delete layout.yaxis;
-    Plotly.newPlot("plot_map", [trace], layout, { responsive:true, displayModeBar:false });
-  }
-
-  function renderAll() {
-    if (!RAW.length) {
-      renderKPIs([]);
-      els.topItemsBody.innerHTML = `<tr><td colspan="6" style="color: var(--muted);">Upload data to view.</td></tr>`;
-      emptyPlot( "Upload data to view");
-      emptyPlot("plot_scatter", "Upload data to view");
-      emptyPlot("plot_heatmap", "Upload data to view");
-      emptyPlot("plot_segment", "Upload data to view");
-      emptyPlot("plot_subscription", "Upload data to view");
-      Plotly.newPlot("plot_map", [{type:"choropleth", locations:[], z:[]}],
-        plotlyLayoutBase("Upload data to view"), { responsive:true, displayModeBar:false });
-      return;
-    }
-
-    applyFilters();
-    const rows = FILTERED;
-
-    if (!rows.length) {
-      setPill("warn", "0 rows (filters)");
-      setStatus("Your filters removed all rows. Try Reset filters.");
-
-      renderKPIs([]);
-      renderTopItemsTable([]);
-
-      emptyPlot( "No data for current filters");
-      emptyPlot("plot_scatter", "No data for current filters");
-      emptyPlot("plot_heatmap", "No data for current filters");
-      emptyPlot("plot_segment", "No data for current filters");
-      emptyPlot("plot_subscription", "No data for current filters");
-      Plotly.newPlot("plot_map", [{type:"choropleth", locations:[], z:[]}],
-        plotlyLayoutBase("No data for current filters"), { responsive:true, displayModeBar:false });
-      return;
-    }
-
-    setPill("ok", `${rows.length} rows`);
-    setStatus(`Rendering dashboard from ${rows.length} filtered records (of ${RAW.length} total).`);
-
-    renderKPIs(rows);
-    renderTopItemsTable(rows);
-
-    
-
-    renderScatter(rows);
-    renderHeatmap(rows);
-    renderSegment(rows);
-    renderSubscription(rows);
-    renderMap(rows);
-  }
-
-  // ---------------- Upload + initialization ----------------
-  function normalizeRecord(r) {
-    return {
-      ...r,
-      purchase_amount: toNum(r.purchase_amount ?? r.amount ?? r.purchaseAmount),
-      review_rating: toNum(r.review_rating ?? r.rating ?? r.reviewRating),
-      previous_purchases: toNum(r.previous_purchases ?? r.previousPurchases),
-      purchase_frequency_days: toNum(r.purchase_frequency_days ?? r.purchaseFrequencyDays),
-      category: r.category ?? r.product_category ?? r.productCategory,
-      season: r.season,
-      age_group: r.age_group ?? r.ageGroup,
-      frequency_of_purchases: r.frequency_of_purchases ?? r.frequencyOfPurchases,
-      subscription_status: r.subscription_status ?? r.subscriptionStatus,
-      gender: r.gender,
-      location: r.location ?? r.state
-    };
-  }
-
-  function validateDataset(data) {
-    if (!Array.isArray(data)) return { ok:false, msg:"JSON must be an array of objects (records)." };
-    if (!data.length) return { ok:false, msg:"JSON array is empty." };
-    if (typeof data[0] !== "object" || data[0] === null) return { ok:false, msg:"Array must contain objects." };
-    return { ok:true, msg:`Loaded ${data.length} records.` };
-  }
-
-  function populateFilters() {
-    setOptions(els.category, uniq(RAW.map(r => r.category)).sort());
-    setOptions(els.season, uniq(RAW.map(r => r.season)).sort());
-    setOptions(els.gender, uniq(RAW.map(r => r.gender)).sort());
-  }
-
-  function wireEvents() {
-    for (const el of [els.category, els.season, els.subscription, els.gender]) {
-      el.addEventListener("change", renderAll);
-    }
-
-    els.resetBtn.addEventListener("click", () => {
-      els.category.value = "__all__";
-      els.season.value = "__all__";
-      els.subscription.value = "__all__";
-      els.gender.value = "__all__";
-      renderAll();
-    });
-
-    els.exportBtn.addEventListener("click", async () => {
-      // Exports Plotly charts only (table is HTML). Downloads each chart as PNG.
-      const ids = ["plot_scatter","plot_heatmap","plot_segment","plot_subscription","plot_map"];
-      for (const id of ids) {
-        try {
-          const url = await Plotly.toImage(id, { format:"png", height: 600, width: 1000, scale: 2 });
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `${id}.png`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-        } catch (e) {
-          console.warn("Export failed for", id, e);
-        }
-      }
-    });
-
-    window.addEventListener("resize", () => {
-      ["plot_scatter","plot_heatmap","plot_segment","plot_subscription","plot_map"].forEach(id => {
-        try { Plotly.Plots.resize(id); } catch(_) {}
-      });
-    });
-
-    document.getElementById("fileInput").addEventListener("change", async (ev) => {
-      const file = ev.target.files && ev.target.files[0];
-      if (!file) return;
-
-      setPill("warn", "Loading…");
-      setStatus(`Reading ${file.name}…`);
-
-      try {
-        const text = await file.text();
-        const data = JSON.parse(text);
-        const v = validateDataset(data);
-        if (!v.ok) {
-          RAW = [];
-          enableControls(false);
-          setPill("bad", "Invalid JSON");
-          setStatus(v.msg);
-          renderAll();
-          return;
-        }
-
-        RAW = data.map(normalizeRecord);
-
-        const stateMatches = RAW.filter(r => STATE_ABBR[r.location]).length;
-
-        populateFilters();
-        enableControls(true);
-
-        const note = stateMatches
-          ? `Loaded ${RAW.length} records. ${stateMatches} have recognizable US states in location.`
-          : `Loaded ${RAW.length} records. (Map may be empty: no recognizable US states in location.)`;
-
-        setPill(stateMatches ? "ok" : "warn", "Data loaded");
-        setStatus(note);
-
-        // reset filters on new upload
-        els.category.value = "__all__";
-        els.season.value = "__all__";
-        els.subscription.value = "__all__";
-        els.gender.value = "__all__";
-
-        renderAll();
-      } catch (err) {
-        console.error(err);
-        RAW = [];
-        enableControls(false);
-        setPill("bad", "Load failed");
-        setStatus("Could not parse the file as JSON. Check that it is valid JSON (array of objects).");
-        renderAll();
-      }
-    });
-  }
-
-  function bootEmpty() {
-    enableControls(false);
-    renderKPIs([]);
-    els.topItemsBody.innerHTML = `<tr><td colspan="6" style="color: var(--muted);">Upload data to view.</td></tr>`;
-    emptyPlot( "Upload data to view");
-    emptyPlot("plot_scatter", "Upload data to view");
-    emptyPlot("plot_heatmap", "Upload data to view");
-    emptyPlot("plot_segment", "Upload data to view");
-    emptyPlot("plot_subscription", "Upload data to view");
-    Plotly.newPlot("plot_map", [{type:"choropleth", locations:[], z:[]}],
-      plotlyLayoutBase("Upload data to view"), { responsive:true, displayModeBar:false });
-  }
-
-  wireEvents();
-  bootEmpty();
-})();
 </script>
+
 </body>
 </html>
+
